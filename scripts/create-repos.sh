@@ -4,6 +4,20 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Usa un token fresco de gh para no depender de un remote con credenciales viejas.
+github_push_url() {
+    local tok=""
+    if command -v gh >/dev/null 2>&1; then
+        tok=$(gh auth token 2>/dev/null || true)
+    fi
+    if [[ -n "$tok" ]]; then
+        echo "https://x-access-token:${tok}@github.com/${GH_NS}/${REPO}.git"
+    else
+        echo "git@github.com:${GH_NS}/${REPO}.git"
+    fi
+}
+
 GH_NS="${GH_NAMESPACE:-BENDER35}"
 GL_NS="${GITLAB_NAMESPACE:-BENDER_5000}"
 REPO="${REPO_NAME:-cyberlab-setup}"
@@ -44,10 +58,12 @@ fi
 
 echo
 echo "== Conectar el checkout local =="
-git -C "$ROOT" remote remove origin 2>/dev/null || true
-git -C "$ROOT" remote add origin "https://github.com/${GH_NS}/${REPO}.git"
+if ! git -C "$ROOT" remote get-url origin >/dev/null 2>&1; then
+    git -C "$ROOT" remote add origin "https://github.com/${GH_NS}/${REPO}.git"
+fi
 if git -C "$ROOT" rev-parse --verify HEAD >/dev/null 2>&1; then
     git -C "$ROOT" branch -M main
-    git -C "$ROOT" push -u origin main
+    PUSH_URL=$(github_push_url)
+    git -C "$ROOT" push "$PUSH_URL" main
 fi
 echo "Listo. Continua con scripts/setup-mirror.sh"

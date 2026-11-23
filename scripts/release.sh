@@ -11,12 +11,25 @@ DIST="$ROOT/dist"
 ZIP="$DIST/cyberlab-setup-${TAG}.zip"
 SUMS="$DIST/SHA256SUMS"
 
-GH_REPO="${GH_NAMESPACE:-BENDER35}/${REPO_NAME:-cyberlab-setup}"
+GH_NS="${GH_NAMESPACE:-BENDER35}"
+GH_REPO="${GH_NS}/${REPO_NAME:-cyberlab-setup}"
 GL_NS="${GITLAB_NAMESPACE:-BENDER_5000}"
 GL_PROJECT="${GITLAB_PROJECT:-cyberlab-setup}"
 GL_HOST="${GITLAB_HOST:-gitlab.com}"
 API="https://${GL_HOST}/api/v4"
 GL_ENC="${GL_NS}%2F${GL_PROJECT}"
+
+github_push_url() {
+    local tok=""
+    if command -v gh >/dev/null 2>&1; then
+        tok=$(gh auth token 2>/dev/null || true)
+    fi
+    if [[ -n "$tok" ]]; then
+        echo "https://x-access-token:${tok}@github.com/${GH_NS}/${REPO_NAME:-cyberlab-setup}.git"
+    else
+        echo "git@github.com:${GH_NS}/${REPO_NAME:-cyberlab-setup}.git"
+    fi
+}
 
 NOTES=$(mktemp)
 trap 'rm -f "$NOTES"' EXIT
@@ -43,7 +56,8 @@ if git -C "$ROOT" rev-parse "$TAG" >/dev/null 2>&1; then
 else
     git -C "$ROOT" tag -a "$TAG" -m "Release $TAG"
 fi
-git -C "$ROOT" push origin "$TAG" || echo "Aviso: no se pudo empujar la etiqueta a GitHub (gh la creara si falta)."
+GH_PUSH_URL=$(github_push_url)
+git -C "$ROOT" push "$GH_PUSH_URL" "$TAG" || echo "Aviso: no se pudo empujar la etiqueta a GitHub (gh la creara si falta)."
 
 if gh release view "$TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
     echo "La release ya existe; actualizando assets."
