@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Logs e informes generados por el instalador
+cyberlab-install-*.log
+*.log
+install-report.json
+
+# Artefactos de release
+dist/
+build/
+*.zip
+*.sha256
+
+# Secretos y credenciales (NUNCA versionar)
+.env
+.env.*
+*.token
+*.pem
+*.key
+id_rsa*
+credentials.json
+
+# Sistemas operativos / editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
